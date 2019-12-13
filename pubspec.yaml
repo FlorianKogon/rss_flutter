@@ -21,6 +21,7 @@ dependencies:
     sdk: flutter
   webfeed: ^0.4.2
   http: ^0.12.0+2
+  intl: ^0.16.0
 
 
   # The following adds the Cupertino Icons font to your application.
