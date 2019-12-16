@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
 import 'package:rss_flutter/models/parser.dart';
+import 'package:rss_flutter/widgets/loading.dart';
 import 'package:webfeed/webfeed.dart';
 import 'package:intl/intl.dart';
+import 'loading.dart';
+import 'page_detail.dart';
 
 
 class Home extends StatefulWidget {
@@ -26,15 +29,34 @@ class _HomeState extends State<Home> {
 
   @override
   Widget build(BuildContext context) {
-    Orientation orientation = MediaQuery.of(context).orientation;
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.title),
+        actions: <Widget>[
+          IconButton(
+            icon: Icon(Icons.refresh),
+            onPressed: () {
+            setState(() {
+              feed = null;
+              parse();
+            });
+            },
+          ),
+        ],
       ),
-      body: Center(
-        child: (orientation == Orientation.portrait)? list() : grid(),
-      ),
+      body: bodyChoice(),
     );
+  }
+
+  Widget bodyChoice() {
+    Orientation orientation = MediaQuery.of(context).orientation;
+    if (feed == null) {
+      return Loading();
+    } else {
+      return Center(
+        child: (orientation == Orientation.portrait)? list() : grid(),
+      );
+    }
   }
 
   Future parse() async {
@@ -56,7 +78,11 @@ class _HomeState extends State<Home> {
           child: Card(
             elevation: 7.5,
             child:InkWell(
-              onTap: (Navigator.push(MaterialPageRoute(builder: null), route)),
+              onTap: () {
+                Navigator.push(context, MaterialPageRoute(builder: (BuildContext context) {
+                  return PageDetail(article);
+                }));
+              },
               child: Container(
                 padding: EdgeInsets.all(10.0),
                 child: Column(
@@ -78,8 +104,14 @@ class _HomeState extends State<Home> {
                       ),
                     ),
                     Padding(padding: EdgeInsets.all(5.0)),
-                    Image.network(feed.image.url,
-                      fit: BoxFit.cover,
+                    Card(
+                      elevation: 7.5,
+                      child: Container(
+                        width: MediaQuery.of(context).size.width / 2,
+                        child: Image.network(feed.image.url,
+                        fit: BoxFit.cover,
+                        ),
+                      ),
                     ),
                     Padding(padding: EdgeInsets.all(5.0)),
                     Text('Publié il y a ${difference(article.pubDate)}',
@@ -105,13 +137,18 @@ class _HomeState extends State<Home> {
           child: Card(
             elevation: 7.5,
             child:InkWell(
-              onTap: (() => print(article.guid)),
+              onTap: () {
+                Navigator.push(context, MaterialPageRoute(builder: (BuildContext context) {
+                  return PageDetail(article);
+                }));
+              },
               child: Container(
                 padding: EdgeInsets.all(10.0),
                 child: Column(
                   children: <Widget>[
                     Text(
                       article.title,
+                      maxLines: 2,
                       style: TextStyle(
                         fontSize: 16.0,
                         fontStyle: FontStyle.italic,
@@ -119,9 +156,24 @@ class _HomeState extends State<Home> {
                       ),
                     ),
                     Padding(padding: EdgeInsets.all(5.0)),
-                    Image.network(feed.image.url,
-                        fit: BoxFit.cover,
+                    Text(
+                      article.description,
+                      maxLines: 2,
+                      style: TextStyle(
+                        fontSize: 12.0,
+                        fontWeight: FontWeight.w300,
                       ),
+                    ),
+                    Padding(padding: EdgeInsets.all(5.0)),
+                    Card(
+                      elevation: 7.5,
+                      child: Container(
+                        width: MediaQuery.of(context).size.width / 2,
+                        child: Image.network(feed.image.url,
+                          fit: BoxFit.cover,
+                        ),
+                      ),
+                    ),
                     Padding(padding: EdgeInsets.all(5.0)),
                     Text('Publié il y a ${difference(article.pubDate)}',
                     ),
@@ -135,7 +187,7 @@ class _HomeState extends State<Home> {
   }
 
   String difference(article) {
-    DateFormat dateFormat = DateFormat("yyyy-MM-ddTHH:mm:ss");
+    DateFormat dateFormat = DateFormat("yyyy-MM-ddTHH:mm:ssZ");
     DateTime dateTime = dateFormat.parse(article);
     int result = DateTime.now().difference(dateTime).inMinutes;
     if (result >= 14400) {
